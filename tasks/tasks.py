@@ -2,15 +2,18 @@ import argparse
 import os
 from win11toast import notify, toast
 import curses
-from curses.textpad import Textbox, rectangle
+import locale
+
+locale.setlocale(locale.LC_ALL, '')
 
 
 def create_parser():
     parser = argparse.ArgumentParser(description="Taskito Todo List App")
     parser.add_argument("-a", "--add", metavar="", help="Add a task")
-    parser.add_argument("-l", "--list", action="store_true", help="See All Tasks")
+    parser.add_argument("-l", "--list", action="store_true", help="See All Tasks And Edit Them")
     parser.add_argument("-r", "--remove", metavar="", help="Remove a task")
     return parser
+
 
 def is_empty_or_whitespace(text):
     """Check if the given text is empty or contains only whitespace."""
@@ -20,7 +23,7 @@ def is_empty_or_whitespace(text):
 
 def add_task(task):
     with open("database.txt", "a") as file:
-        file.write(task + " | " + "*" + "\n")
+        file.write(task + " | " + "-" + "\n")
         try:
             notify('Taskio', 'A new task added', audio='ms-winsoundevent:Notification.Reminder', duration="short")
         except TypeError:
@@ -31,8 +34,6 @@ def add_task(task):
 def list_tasks(stdscr):
     # Clear the screen
     stdscr.clear()
-
-    
 
     if os.path.exists("database.txt"):
         with open("database.txt", "r") as db:
@@ -109,6 +110,7 @@ def list_tasks(stdscr):
                         option_index += 1
                     elif key == curses.KEY_ENTER or key in [10, 13]:
                         if option_index == 0:
+                            Task_status(current_row)
                             return
                         elif option_index == 1:
                             stdscr.clear()
@@ -119,7 +121,7 @@ def list_tasks(stdscr):
                             Edit_task(current_row, text)
                             return
                         elif option_index == 2:
-                            remove_task(current_row)
+                            remove_task(current_row+1)
                             return
                         
                         stdscr.refresh()
@@ -135,14 +137,12 @@ def list_tasks(stdscr):
 
 
 
-
-
 def remove_task(index):
     if os.path.exists("database.txt"):
         with open("database.txt", "r") as file:
             tasks = file.readlines()
         with open("database.txt", "w") as file:
-            for i, task in enumerate(tasks):
+            for i, task in enumerate(tasks, start=1):
                 if i != index:
                     file.write(task)
         notify("Taskio", "Task removed successfully.")
@@ -166,6 +166,29 @@ def Edit_task(index, Task):
     with open('database.txt', 'w') as file:
         file.writelines(tasks)
     notify('Taskio', 'Task Edited')
+
+
+
+def Task_status(index):
+    with open("database.txt", "r") as db:
+            tasks = db.readlines()
+
+    for i, task in enumerate(tasks):
+        print(i, task)
+        if i == index:
+            thetask = task.split("|")[0]
+            tasks[i] = f"{thetask.strip()} | + \n"
+        else:
+            tasks[i] = f"{task}"
+
+    with open('database.txt', 'w', encoding="utf-8") as file:
+        file.writelines(tasks)
+    print("√")
+    notify('Taskio', 'Task Updated')
+
+
+
+
 
 def main():
     parser = create_parser()
