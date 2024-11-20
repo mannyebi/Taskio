@@ -162,5 +162,4 @@ cython_debug/
 #.idea/
 
 tasks/var.py
-taskio-logo-1.png
 taskio-logo-2.png
